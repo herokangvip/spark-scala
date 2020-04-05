@@ -59,7 +59,7 @@ object TransformTest {
 
     //transform和map的区别
     // TODO: 这个地方的代码只执行一遍在Driver执行
-    mapStream.transform {
+    /*mapStream.transform {
       case rdd => {
         // TODO: 这个地方的代码会每个采集周期执行，在Driver，比如黑名单需求需要每次滑动重新加载黑名单
         // TODO: 而不是启动的时候加载一次
@@ -70,7 +70,7 @@ object TransformTest {
           }
         }
       }
-    }
+    }*/
 
     //启动采集器，流式处理要加最后这两步
     sc.start()

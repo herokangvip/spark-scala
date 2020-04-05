@@ -2,6 +2,7 @@ package com.hk.scala
 
 import org.apache.hadoop.io.{LongWritable, Text}
 import org.apache.hadoop.mapred.TextInputFormat
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{HashPartitioner, SparkConf, SparkContext}
 
@@ -110,7 +111,7 @@ object WordCount {
       data + data2
     })
 
-    //aggregateByKey,先分区内聚合，再分区间聚合
+    //aggregateByKey,区别先分区内聚合，再分区间聚合
     val rdd13 = sc.parallelize(Array(("a", 1), ("b", 1), ("b", 1)))
     //柯里化+运行时类型推断
     val value13: RDD[(String, Int)] = rdd13.aggregateByKey(0)((a, b) => {
@@ -143,14 +144,40 @@ object WordCount {
 
     //join，可以连接使用，双方的key必须匹配上
     val rdd18 = sc.parallelize(Array((1, "a"), (2, "b"), (3, "c")))
-    val rdd19 = sc.parallelize(Array((1, 99), (2, 99), (3, 99),(4, 99)))
+    val rdd19 = sc.parallelize(Array((1, 99), (2, 99), (3, 99), (4, 99)))
     val value19: RDD[(Int, (String, Int))] = rdd18.join(rdd19)
     //出参:Array((1, ("a"，99）), (2, （"b",99）), (3, （"c",99）))
     //cogroup,与join区别，一：tuple中的数据包装成了可迭代对象，二:不匹配的键数据也会放过来比如上面例子中的4
 
 
+    //foreach和foreachPartitions
+    val rdd20: RDD[Int] = sc.makeRDD(1 to 9)
+    rdd20.foreachPartition(it => {
+      //这里每个分区在Executors执行一遍
+      it.foreach(el => {
+        //Executors每条数据执行一遍
+        el * 100
+      })
+    })
 
+    val rdd21: rdd20.type = rdd20.cache()
+    rdd21.unpersist()
+
+    val rdd23: RDD[Int] = sc.makeRDD(1 to 9)
+    var broad: String = "test"
+    //广播变量,如果是从hdfs读取需要将executor的数据collect到driver端合并，再广播到executor
+    val broadcastRef: Broadcast[String] = sc.broadcast(broad)
+    val rdd24: RDD[Int] = rdd23.map(d => {
+      //Executor中获取广播变量
+      val executorStr: String = broadcastRef.value
+      println(executorStr)
+      d * 10
+    })
+    rdd24.collect()
+
+    sc.stop()
 
   }
+
 
 }

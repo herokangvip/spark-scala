@@ -1,6 +1,6 @@
 package com.hk.scala
 
-import org.apache.spark.SparkConf
+import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
@@ -14,6 +14,7 @@ object SqlTest {
       .appName("Word Count")
       .config(conf)
       .getOrCreate()
+    val sc: SparkContext = spark.sparkContext
 
     val df: DataFrame = spark.read.json("in/user.json")
     //val df: DataFrame = spark.read.format("json").load("in/user.json")
@@ -23,8 +24,9 @@ object SqlTest {
 
     //进行rdd和dataFrame和dataSet的转换需要引入隐式转换，
     //这里的spark是指sparkSession对象不是包名
-    import spark.implicits._
-
+    import spark.sqlContext.implicits._
+    val rdd23: RDD[Int] = sc.makeRDD(1 to 9)
+    val frame: DataFrame = rdd23.toDF()
     //structureStreaming内容
     //import org.apache.spark.sql.functions._
     //df.groupBy(window($"ts","10 minutes","4minutes"),$"word")
